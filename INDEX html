@@ -3,97 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Trinity-Large-Preview</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Trinity Large Preview Chat</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .chat-container { height: 70vh; }
-        .user-msg { background-color: #3b82f6; color: white; align-self: flex-end; }
-        .bot-msg { background-color: #f3f4f6; color: #1f2937; align-self: flex-start; }
+        :root {
+            --bg-color: #0f172a;       /* Slate 900 */
+            --chat-bg: #1e293b;        /* Slate 800 */
+            --header-bg: #334155;      /* Slate 700 */
+            --user-msg-bg: #4f46e5;    /* Indigo 600 */
+            --bot-msg-bg: #334155;     /* Slate 700 */
+            --text-primary: #f8fafc;   /* Slate 50 */
+            --text-secondary: #94a3b8; /* Slate 400 */
+            --accent: #22c55e;         /* Green 500 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Container Principal */
+        .chat-wrapper {
+            width: 100%;
+            max-width: 900px;
+            height: 95vh;
+            background: var(--chat-bg);
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--header-bg);
+        }
+
+        /* En-tête */
+        header {
+            padding: 15px 20px;
+            background: var(--header-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #475569;
+        }
+
+        .header-title {
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .model-badge {
+            font-size: 0.75rem;
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        /* Configuration API Key */
+        .config-bar {
+            background: #1e293b;
+            padding: 10px 20px;
+            border-bottom: 1px solid #475569;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .api-input {
+            flex: 1;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .api-input:focus {
+            outline: none;
+            border-color: var(--user-msg-bg);
+        }
+
+        /* Zone de Chat */
+        #chat-window {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        /* Styles des Messages */
+        .message {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+            word-wrap: break-word;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--user-msg-bg);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: var(--bot-msg-bg);
+            color: var(--text-primary);
+            border-bottom-left-radius: 2px;
+        }
+
+        /* Zone de Saisie */
+        .input-area {
+            padding: 20px;
+            background: var(--header-bg);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        textarea {
+            flex: 1;
+            background: var(--chat-bg);
+            border: 1px solid #475569;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            resize: none;
+            height: 50px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            border-color: var(--user-msg-bg);
+        }
+
+        button.send-btn {
+            height: 50px;
+            width: 50px;
+            background: var(--user-msg-bg);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        button.send-btn:hover {
+            background-color: #4338ca;
+        }
+
+        button.send-btn:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+        }
+
+        /* Indicateur de chargement */
+        .loading {
+            align-self: flex-start;
+            margin-left: 10px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            display: none;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .dots span {
+            animation: blink 1.4s infinite both;
+        }
+        .dots span:nth-child(2) { animation-delay: 0.2s; }
+        .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            20% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        /* Markdown-like Code Block Styling (Simple) */
+        pre {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-top: 5px;
+            border: 1px solid #475569;
+        }
+        code {
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+        }
+
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col items-center justify-center p-4">
+<body>
 
-    <div class="w-full max-w-2xl bg-white rounded-lg shadow-xl flex flex-col overflow-hidden">
-        <div class="bg-indigo-600 p-4 text-white text-center font-bold text-xl">
-            Arcee Trinity Chatbot
+<div class="chat-wrapper">
+    <header>
+        <div class="header-title">
+            <i class="fas fa-robot"></i>
+            Trinity Large Preview
+            <span class="model-badge">Free</span>
         </div>
-
-        <div id="chat-box" class="chat-container overflow-y-auto p-4 flex flex-col gap-4">
-            <div class="bot-msg p-3 rounded-lg max-w-[80%]">
-                Bonjour ! Je suis Trinity-Large-Preview. Comment puis-je vous aider aujourd'hui ?
-            </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary);">
+            Powered by Arcee & OpenRouter
         </div>
+    </header>
 
-        <div class="border-t p-4 flex gap-2">
-            <input type="text" id="user-input" placeholder="Écrivez votre message..." 
-                   class="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button onclick="sendMessage()" id="send-btn" 
-                    class="bg-indigo-600 text-white px-6 py-2 rounded-full hover:bg-indigo-700 transition">
-                Envoyer
-            </button>
+    <!-- Configuration de la clé API -->
+    <div class="config-bar">
+        <i class="fas fa-key" style="color: var(--text-secondary);"></i>
+        <input type="password" id="api-key" class="api-input" placeholder="Collez votre clé OpenRouter ici (sk-or-...)">
+    </div>
+
+    <!-- Fenêtre de Chat -->
+    <div id="chat-window">
+        <div class="message bot-message">
+            Bonjour ! Je suis connecté au modèle <strong>Trinity-Large-Preview</strong>. 
+            Veuillez entrer votre clé API ci-dessus pour commencer la conversation.
         </div>
     </div>
 
-    <script>
-        const API_KEY = "VOTRE_CLE_API_OPENROUTER"; // <--- METTEZ VOTRE CLÉ ICI
-        const MODEL = "arcee-ai/trinity-large-preview:free";
-        const chatBox = document.getElementById('chat-box');
-        const userInput = document.getElementById('user-input');
+    <!-- Indicateur de frappe -->
+    <div class="loading" id="loading-indicator">
+        <span>Trinity réfléchit</span>
+        <div class="dots"><span>.</span><span>.</span><span>.</span></div>
+    </div>
 
-        // Gérer l'envoi via la touche Entrée
-        userInput.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") sendMessage();
-        });
+    <!-- Zone de texte -->
+    <div class="input-area">
+        <textarea id="user-input" placeholder="Posez une question à Trinity..." rows="1"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
 
-        async function sendMessage() {
-            const text = userInput.value.trim();
-            if (!text) return;
+<script>
+    const chatWindow = document.getElementById('chat-window');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const apiKeyInput = document.getElementById('api-key');
+    const loadingIndicator = document.getElementById('loading-indicator');
 
-            // Afficher le message utilisateur
-            appendMessage(text, 'user-msg');
-            userInput.value = '';
+    // Historique de conversation pour le contexte
+    let conversationHistory = [];
 
-            // Afficher un indicateur de chargement
-            const loadingId = "loading-" + Date.now();
-            appendMessage("En train de réfléchir...", 'bot-msg', loadingId);
+    // URL de l'API et Modèle Spécifique
+    const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+    const MODEL_ID = "arcee-ai/trinity-large-preview:free";
 
-            try {
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${API_KEY}`,
-                        "HTTP-Referer": window.location.href, // Requis par OpenRouter
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        "model": MODEL,
-                        "messages": [
-                            {"role": "user", "content": text}
-                        ]
-                    })
-                });
+    // Gestion de la hauteur du textarea
+    userInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        if(this.value === '') this.style.height = '50px';
+    });
 
-                const data = await response.json();
-                const botReply = data.choices[0].message.content;
+    // Envoi avec Entrée (Shift+Entrée pour saut de ligne)
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
 
-                // Supprimer le chargement et afficher la réponse
-                document.getElementById(loadingId).remove();
-                appendMessage(botReply, 'bot-msg');
+    async function sendMessage() {
+        const text = userInput.value.trim();
+        const apiKey = apiKeyInput.value.trim();
 
-            } catch (error) {
-                console.error("Erreur:", error);
-                document.getElementById(loadingId).innerText = "Erreur de connexion à l'API.";
+        if (!text) return;
+
+        if (!apiKey) {
+            appendMessage("⚠️ Veuillez entrer une clé API OpenRouter valide dans le champ en haut.", "bot-message");
+            return;
+        }
+
+        // 1. Ajouter le message utilisateur à l'UI
+        appendMessage(text, 'user-message');
+        userInput.value = '';
+        userInput.style.height = '50px';
+        
+        // 2. Préparer l'historique
+        conversationHistory.push({ role: "user", content: text });
+
+        // 3. UI Loading
+        loadingIndicator.style.display = 'flex';
+        sendBtn.disabled = true;
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        try {
+            // 4. Appel API Réel
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": window.location.href,
+                    "X-Title": "Trinity Chatbot Interface"
+                },
+                body: JSON.stringify({
+                    "model": MODEL_ID,
+                    "messages": conversationHistory,
+                    "temperature": 0.7,
+                    "max_tokens": 1000
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || "Erreur de connexion API");
             }
-        }
 
-        function appendMessage(text, className, id = null) {
-            const div = document.createElement('div');
-            if(id) div.id = id;
-            div.className = `${className} p-3 rounded-lg max-w-[80%] whitespace-pre-wrap`;
-            div.innerText = text;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            const data = await response.json();
+            const botContent = data.choices[0].message.content;
+
+            // 5. Ajouter la réponse du bot
+            conversationHistory.push({ role: "assistant", content: botContent });
+            appendMessage(formatText(botContent), 'bot-message');
+
+        } catch (error) {
+            console.error(error);
+            appendMessage(`❌ Erreur: ${error.message}`, "bot-message");
+            // Retirer le dernier message utilisateur de l'historique en cas d'erreur pour ne pas bloquer
+            conversationHistory.pop(); 
+        } finally {
+            loadingIndicator.style.display = 'none';
+            sendBtn.disabled = false;
+            chatWindow.scrollTop = chatWindow.scrollHeight;
         }
-    </script>
+    }
+
+    function appendMessage(htmlContent, className) {
+        const div = document.createElement('div');
+        div.classList.add('message', className);
+        div.innerHTML = htmlContent; // Utilisation de innerHTML pour le formatage simple
+        chatWindow.appendChild(div);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // Fonction utilitaire simple pour formater les sauts de ligne et le code
+    function formatText(text) {
+        // Échapper le HTML basique pour éviter les injections XSS
+        let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        
+        // Convertir les blocs de code markdown ```...```
+        safeText = safeText.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        
+        // Convertir les sauts de ligne en <br>
+        return safeText.replace(/\n/g, '<br>');
+    }
+</script>
+
 </body>
 </html>
