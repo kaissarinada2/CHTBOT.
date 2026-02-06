@@ -64,4 +64,132 @@
             padding: 10px;
             border-radius: 15px;
             display: flex;
-            gap:
+            gap: 10px;
+            border: 1px solid #333;
+        }
+
+        textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 10px;
+            outline: none;
+            resize: none;
+            font-family: inherit;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:disabled { background: #444; }
+
+        .loading { display: none; text-align: center; color: var(--accent); margin-bottom: 10px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="font-weight: bold; letter-spacing: 1px;">TRINITY 400B</div>
+    <div id="status" style="font-size: 0.8rem; color: #10b981;">● Connecté à OpenRouter</div>
+</header>
+
+<div id="chat-container">
+    <div class="msg bot">Je suis Trinity-Large-Preview. Mon architecture MoE est prête. Comment puis-je vous aider ?</div>
+</div>
+
+<div id="wait" class="loading">Trinity est en train de générer une réponse...</div>
+
+<footer>
+    <div class="input-box">
+        <textarea id="userInput" rows="1" placeholder="Posez une question à l'IA..."></textarea>
+        <button id="btn" onclick="askAI()">Envoyer</button>
+    </div>
+</footer>
+
+<script>
+    // 1. TA CLÉ API ICI
+    const API_KEY = "sk-or-v1-xxxxxxxxxxxxxxxxxxxx"; // Remplacez par votre clé OpenRouter
+    
+    // 2. L'HISTORIQUE (Mémoire)
+    let messageHistory = [];
+
+    async function askAI() {
+        const input = document.getElementById('userInput');
+        const btn = document.getElementById('btn');
+        const wait = document.getElementById('wait');
+        const text = input.value.trim();
+
+        if (!text) return;
+
+        // Afficher le message utilisateur
+        addMessage(text, 'user');
+        input.value = '';
+        btn.disabled = true;
+        wait.style.display = 'block';
+
+        // Ajouter à l'historique
+        messageHistory.push({ role: "user", content: text });
+
+        try {
+            const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${API_KEY}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": window.location.origin,
+                    "X-Title": "Trinity App"
+                },
+                body: JSON.stringify({
+                    "model": "arcee-ai/trinity-large-preview:free",
+                    "messages": messageHistory // Envoi de tout l'historique
+                })
+            });
+
+            const data = await response.json();
+            
+            if (data.choices && data.choices[0]) {
+                const aiText = data.choices[0].message.content;
+                addMessage(aiText, 'bot');
+                // Sauvegarder la réponse de l'IA dans la mémoire
+                messageHistory.push({ role: "assistant", content: aiText });
+            } else {
+                throw new Error(data.error?.message || "Erreur inconnue");
+            }
+
+        } catch (err) {
+            addMessage("ERREUR: " + err.message, 'bot');
+            console.error(err);
+        } finally {
+            btn.disabled = false;
+            wait.style.display = 'none';
+        }
+    }
+
+    function addMessage(text, type) {
+        const container = document.getElementById('chat-container');
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        div.innerText = text;
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // Gérer la touche Entrée
+    document.getElementById('userInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            askAI();
+        }
+    });
+</script>
+
+</body>
+</html>
